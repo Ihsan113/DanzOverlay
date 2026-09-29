@@ -12,8 +12,8 @@ renderer native C++ (GLES 3.x), dibangun lewat GitHub Actions.
 
 ## Tahap
 0. Cek perangkat (selesai)
-1. Kerangka repo + GitHub Actions  <- kamu di sini
-2. Overlay kosong
+1. Kerangka repo + GitHub Actions
+2. Overlay kosong  <- kamu di sini
 3. Capture layer game
 4. Renderer GLES + upscale/AA
 5. Penajaman, tone mapping, pseudo-HDR + mask HUD

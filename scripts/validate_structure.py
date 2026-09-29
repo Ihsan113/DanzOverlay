@@ -16,10 +16,19 @@ REQUIRED = [
     "app/src/main/java/com/danzku/overlay/MainActivity.kt",
     "app/src/main/java/com/danzku/overlay/NativeBridge.kt",
     "app/src/main/java/com/danzku/overlay/RootShell.kt",
+    "app/src/main/java/com/danzku/overlay/OverlayService.kt",
     ".github/workflows/build.yml",
 ]
 
 errors = []
+
+# file modul app harus di app/, bukan di root
+if (ROOT / "src").exists():
+    errors.append("folder src/ ada di root; pindahkan isinya ke app/src/")
+root_build = ROOT / "build.gradle.kts"
+if root_build.is_file() and "android {" in root_build.read_text():
+    errors.append("build.gradle.kts root berisi blok android {}; itu harus di app/build.gradle.kts")
+
 for rel in REQUIRED:
     if not (ROOT / rel).is_file():
         errors.append(f"file hilang: {rel}")
