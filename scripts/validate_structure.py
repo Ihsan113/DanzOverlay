@@ -18,6 +18,7 @@ REQUIRED = [
     "app/src/main/java/com/danzku/overlay/RootShell.kt",
     "app/src/main/java/com/danzku/overlay/OverlayService.kt",
     "app/src/main/java/com/danzku/overlay/CaptureService.kt",
+    "app/src/main/java/com/danzku/overlay/PillService.kt",
     "app/src/main/java/com/danzku/overlay/CaptureStats.kt",
     ".github/workflows/build.yml",
 ]
@@ -45,7 +46,7 @@ if manifest.is_file():
 # service wajib terdaftar di manifest (CaptureService harus bertipe mediaProjection)
 if manifest.is_file():
     m = manifest.read_text()
-    for svc in (".OverlayService", ".CaptureService"):
+    for svc in (".OverlayService", ".CaptureService", ".PillService"):
         if svc not in m:
             errors.append(f"service {svc} belum terdaftar di manifest")
     if "mediaProjection" not in m:

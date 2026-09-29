@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,7 +16,6 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import kotlin.math.abs
 
 class MainActivity : Activity() {
 
@@ -111,6 +111,30 @@ class MainActivity : Activity() {
             setOnClickListener { runFeedbackTest() }
         }
 
+        val btnPillOn = Button(this).apply {
+            text = "Tampilkan pill FPS"
+            setOnClickListener {
+                if (!Settings.canDrawOverlays(this@MainActivity)) {
+                    log.text = "Izin overlay belum aktif. Tekan 'Beri izin via root' dulu."
+                } else {
+                    startForegroundService(Intent(this@MainActivity, PillService::class.java))
+                    log.text = if (CaptureStats.running) {
+                        "Pill FPS ditampilkan."
+                    } else {
+                        "Pill ditampilkan. Mulai capture agar FPS terisi."
+                    }
+                }
+            }
+        }
+
+        val btnPillOff = Button(this).apply {
+            text = "Sembunyikan pill FPS"
+            setOnClickListener {
+                stopService(Intent(this@MainActivity, PillService::class.java))
+                log.text = "Pill FPS disembunyikan."
+            }
+        }
+
         root.addView(heading)
         root.addView(nativeInfo)
         root.addView(status)
@@ -122,6 +146,8 @@ class MainActivity : Activity() {
         root.addView(btnCapStart)
         root.addView(btnCapStop)
         root.addView(btnTest)
+        root.addView(btnPillOn)
+        root.addView(btnPillOff)
         root.addView(log)
         setContentView(ScrollView(this).apply { addView(root) })
     }
@@ -152,7 +178,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun startOverlay(tintOn: Boolean): Boolean {
+    private fun startOverlay(tintOn: Boolean, mark: Boolean = false): Boolean {
         if (!Settings.canDrawOverlays(this)) {
             log.text = "Izin overlay belum aktif. Tekan 'Beri izin via root' dulu."
             return false
@@ -160,6 +186,7 @@ class MainActivity : Activity() {
         startForegroundService(
             Intent(this, OverlayService::class.java)
                 .putExtra(OverlayService.EXTRA_TINT, tintOn)
+                .putExtra(OverlayService.EXTRA_MARK, mark)
         )
         return true
     }
@@ -169,8 +196,9 @@ class MainActivity : Activity() {
     }
 
     /**
-     * Nyalakan overlay tint saat capture jalan, lalu bandingkan rata-rata warna layar.
-     * Kalau berubah, overlay ikut tertangkap dan renderer tahap 4 butuh strategi anti-feedback.
+     * Uji anti-salah: tampilkan blok magenta solid lewat overlay, lalu hitung piksel magenta di frame capture.
+     * Tidak terpengaruh ukuran atau letterbox capture. Kalau ada, overlay ikut tertangkap
+     * dan renderer tahap 4 butuh strategi anti-feedback.
      */
     private fun runFeedbackTest() {
         if (testing) return
@@ -185,46 +213,46 @@ class MainActivity : Activity() {
         testing = true
         log.text = "Uji 1/2: baseline (overlay mati)..."
         stopOverlay()
+        CaptureStats.markPixels = 0
+        CaptureStats.scanMark = true
         ui.postDelayed({
-            val base = intArrayOf(CaptureStats.avgR, CaptureStats.avgG, CaptureStats.avgB)
+            val baseMark = CaptureStats.markPixels
             val f0 = CaptureStats.frames
-            log.text = "Uji 2/2: overlay tint dinyalakan..."
-            startOverlay(true)
+            log.text = "Uji 2/2: blok magenta dinyalakan..."
+            startOverlay(tintOn = false, mark = true)
             ui.postDelayed({
-                val after = intArrayOf(CaptureStats.avgR, CaptureStats.avgG, CaptureStats.avgB)
+                val mark = CaptureStats.markPixels
                 val newFrames = CaptureStats.frames - f0
+                CaptureStats.scanMark = false
                 stopOverlay()
                 testing = false
 
-                log.text = when {
-                    base[0] < 0 || after[0] < 0 || newFrames <= 0 ->
-                        "Uji tidak valid: tidak ada frame baru setelah overlay menyala."
-                    else -> {
-                        val diff = abs(base[0] - after[0]) + abs(base[1] - after[1]) +
-                            abs(base[2] - after[2])
-                        val verdict = if (diff >= 15) {
-                            "OVERLAY IKUT TERTANGKAP (feedback loop nyata)"
-                        } else {
-                            "Overlay TIDAK tertangkap"
-                        }
-                        "$verdict\nRGB tanpa overlay: ${base.joinToString()}\n" +
-                            "RGB dengan overlay: ${after.joinToString()}\nselisih=$diff, frame baru=$newFrames"
-                    }
+                log.text = if (newFrames <= 0) {
+                    "Uji tidak valid: tidak ada frame baru setelah overlay menyala."
+                } else {
+                    val captured = mark - baseMark >= 20
+                    (if (captured) "OVERLAY IKUT TERTANGKAP (feedback loop nyata)" else "Overlay TIDAK tertangkap") +
+                        "\npiksel magenta: tanpa overlay=$baseMark, dengan overlay=$mark" +
+                        "\nukuran capture ${CaptureStats.width}x${CaptureStats.height}, frame baru=$newFrames"
                 }
-            }, 2000)
+            }, 2500)
         }, 1500)
     }
 
     private fun refreshStatus() {
         val canDraw = Settings.canDrawOverlays(this)
         val sb = StringBuilder()
+        sb.append("Perangkat: ").append(Build.MODEL).append(", Android ")
+            .append(Build.VERSION.RELEASE).append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\n")
         sb.append("Izin overlay: ").append(if (canDraw) "AKTIF" else "belum")
         sb.append("\nOverlay: ").append(if (OverlayService.running) "BERJALAN" else "mati")
+        sb.append("\nPill FPS: ").append(if (PillService.running) "TAMPIL" else "mati")
         if (CaptureStats.running) {
             val ago = SystemClock.elapsedRealtime() - CaptureStats.lastFrameAt
             sb.append("\nCapture: BERJALAN ")
                 .append(CaptureStats.width).append("x").append(CaptureStats.height)
                 .append(", ").append("%.1f".format(CaptureStats.fps)).append(" fps")
+                .append(", resize ").append(CaptureStats.resizeCount).append("x")
                 .append("\nFrame: ").append(CaptureStats.frames)
                 .append(", terakhir ").append(if (CaptureStats.lastFrameAt == 0L) "-" else "${ago} ms lalu")
                 .append("\nRata-rata RGB: ")

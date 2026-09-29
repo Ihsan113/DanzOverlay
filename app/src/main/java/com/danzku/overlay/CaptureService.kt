@@ -35,8 +35,25 @@ class CaptureService : Service() {
     private var worker: HandlerThread? = null
     private var handler: Handler? = null
 
-    private var winStart = 0L
-    private var winCount = 0
+    private var lastFrames = 0L
+    private var lastTick = 0L
+
+    /** Jalan tiap 500 ms di thread capture: cek rotasi layar dan hitung FPS (turun ke 0 saat layar diam). */
+    private val ticker = object : Runnable {
+        override fun run() {
+            resizeIfNeeded()
+            val now = SystemClock.elapsedRealtime()
+            val span = now - lastTick
+            if (span >= 1000) {
+                val f = CaptureStats.frames
+                CaptureStats.fps = (f - lastFrames) * 1000f / span
+                lastFrames = f
+                lastTick = now
+                updateNotification()
+            }
+            handler?.postDelayed(this, 500)
+        }
+    }
 
     private val callback = object : MediaProjection.Callback() {
         override fun onStop() {
@@ -107,9 +124,10 @@ class CaptureService : Service() {
 
         CaptureStats.width = s[0]
         CaptureStats.height = s[1]
-        winStart = SystemClock.elapsedRealtime()
-        winCount = 0
+        lastFrames = 0L
+        lastTick = SystemClock.elapsedRealtime()
         CaptureStats.running = true
+        h.postDelayed(ticker, 500)
 
         val dm = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         dm.registerDisplayListener(displayListener, h)
@@ -142,6 +160,7 @@ class CaptureService : Service() {
         runCatching { old?.close() }
         CaptureStats.width = s[0]
         CaptureStats.height = s[1]
+        CaptureStats.resizeCount = CaptureStats.resizeCount + 1
     }
 
     private fun onFrame(rd: ImageReader) {
@@ -155,15 +174,7 @@ class CaptureService : Service() {
             CaptureStats.frames = CaptureStats.frames + 1
             CaptureStats.lastFrameAt = now
             sampleColor(img)
-
-            winCount++
-            val span = now - winStart
-            if (span >= 1000) {
-                CaptureStats.fps = winCount * 1000f / span
-                winCount = 0
-                winStart = now
-                updateNotification()
-            }
+            if (CaptureStats.scanMark) scanMark(img)
         } finally {
             img.close()
         }
@@ -207,12 +218,43 @@ class CaptureService : Service() {
         }
     }
 
+    /** Hitung piksel magenta (blok uji dari OverlayService) di seluruh frame, langkah 6 piksel. */
+    private fun scanMark(img: Image) {
+        try {
+            val plane = img.planes[0]
+            val buf = plane.buffer
+            val rowStride = plane.rowStride
+            val px = plane.pixelStride
+            val w = img.width
+            val h = img.height
+            var n = 0
+            var y = 0
+            while (y < h) {
+                var x = 0
+                while (x < w) {
+                    val i = y * rowStride + x * px
+                    if ((buf.get(i).toInt() and 0xFF) > 200) {
+                        val g = buf.get(i + 1).toInt() and 0xFF
+                        val b = buf.get(i + 2).toInt() and 0xFF
+                        if (g < 60 && b > 200) n++
+                    }
+                    x += 6
+                }
+                y += 6
+            }
+            CaptureStats.markPixels = n
+        } catch (t: Throwable) {
+            CaptureStats.lastError = "scan magenta: ${t.message}"
+        }
+    }
+
     private fun fail(msg: String) {
         CaptureStats.lastError = msg
         stopSelf()
     }
 
     override fun onDestroy() {
+        handler?.removeCallbacks(ticker)
         runCatching {
             (getSystemService(Context.DISPLAY_SERVICE) as DisplayManager)
                 .unregisterDisplayListener(displayListener)

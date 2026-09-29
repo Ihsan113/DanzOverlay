@@ -14,6 +14,13 @@ object CaptureStats {
     @Volatile var avgG: Int = -1
     @Volatile var avgB: Int = -1
 
+    /** Uji deteksi overlay: jumlah piksel magenta pada frame terakhir (hanya dihitung saat scanMark aktif). */
+    @Volatile var scanMark: Boolean = false
+    @Volatile var markPixels: Int = 0
+
+    /** Berapa kali ukuran capture disesuaikan (rotasi layar). */
+    @Volatile var resizeCount: Int = 0
+
     @Volatile var lastError: String? = null
 
     fun reset() {
@@ -26,5 +33,8 @@ object CaptureStats {
         avgR = -1
         avgG = -1
         avgB = -1
+        scanMark = false
+        markPixels = 0
+        resizeCount = 0
     }
 }

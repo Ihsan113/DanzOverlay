@@ -6,7 +6,9 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -27,7 +29,8 @@ class OverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NOTIF_ID, buildNotification())
         val tint = intent?.getBooleanExtra(EXTRA_TINT, false) ?: false
-        showOverlay(tint)
+        val mark = intent?.getBooleanExtra(EXTRA_MARK, false) ?: false
+        showOverlay(tint, mark)
         running = true
         return START_NOT_STICKY
     }
@@ -51,12 +54,16 @@ class OverlayService : Service() {
             .build()
     }
 
-    private fun showOverlay(tint: Boolean) {
+    private fun showOverlay(tint: Boolean, mark: Boolean) {
         removeOverlay()
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-        val view = View(this).apply {
-            setBackgroundColor(if (tint) Color.argb(40, 0, 160, 255) else Color.TRANSPARENT)
+        val view: View = if (mark) {
+            MarkView(this)
+        } else {
+            View(this).apply {
+                setBackgroundColor(if (tint) Color.argb(40, 0, 160, 255) else Color.TRANSPARENT)
+            }
         }
 
         val lp = WindowManager.LayoutParams(
@@ -90,10 +97,20 @@ class OverlayService : Service() {
 
     companion object {
         const val EXTRA_TINT = "tint"
+        const val EXTRA_MARK = "mark"
         private const val CHANNEL_ID = "danz_overlay"
         private const val NOTIF_ID = 1
 
         @Volatile
         var running: Boolean = false
+    }
+}
+
+/** Blok magenta solid untuk uji apakah overlay ikut tertangkap capture. */
+private class MarkView(ctx: Context) : View(ctx) {
+    private val paint = Paint().apply { color = Color.rgb(255, 0, 255) }
+
+    override fun onDraw(canvas: Canvas) {
+        canvas.drawRect(width * 0.1f, height * 0.2f, width * 0.6f, height * 0.5f, paint)
     }
 }

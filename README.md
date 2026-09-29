@@ -31,5 +31,7 @@ Baris "Native:" harus menampilkan `renderer-stub 0.1 (stage1)`. Tekan
 2. Status harus menampilkan resolusi layar, jumlah frame, dan rata-rata RGB.
    FPS hanya akurat kalau isi layar bergerak (buka game, tarik bayangan
    notifikasi untuk melihat fps).
-3. Tekan "Uji: overlay ikut tertangkap?". Hasilnya menentukan strategi
-   anti-feedback untuk renderer tahap 4.
+3. Tekan "Uji: overlay ikut tertangkap?". Blok magenta dari overlay dicari di
+   frame capture. Hasilnya menentukan strategi anti-feedback untuk renderer tahap 4.
+4. "Tampilkan pill FPS" memunculkan pill mengambang (FPS dari capture + suhu baterai).
+   Geser dengan jari; posisi tersimpan. FPS hanya terisi saat capture berjalan.
