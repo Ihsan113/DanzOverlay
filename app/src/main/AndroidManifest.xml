@@ -20,6 +20,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".VdActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density"
+            android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" />
+
         <service
             android:name=".OverlayService"
             android:exported="false" />

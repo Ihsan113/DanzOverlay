@@ -19,6 +19,7 @@ REQUIRED = [
     "app/src/main/java/com/danzku/overlay/OverlayService.kt",
     "app/src/main/java/com/danzku/overlay/CaptureService.kt",
     "app/src/main/java/com/danzku/overlay/PillService.kt",
+    "app/src/main/java/com/danzku/overlay/VdActivity.kt",
     "app/src/main/java/com/danzku/overlay/CaptureStats.kt",
     ".github/workflows/build.yml",
 ]
@@ -49,6 +50,8 @@ if manifest.is_file():
     for svc in (".OverlayService", ".CaptureService", ".PillService"):
         if svc not in m:
             errors.append(f"service {svc} belum terdaftar di manifest")
+    if ".VdActivity" not in m:
+        errors.append("activity .VdActivity belum terdaftar di manifest")
     if "mediaProjection" not in m:
         errors.append("CaptureService perlu android:foregroundServiceType=\"mediaProjection\"")
 

@@ -14,7 +14,8 @@ renderer native C++ (GLES 3.x), dibangun lewat GitHub Actions.
 0. Cek perangkat (selesai)
 1. Kerangka repo + GitHub Actions
 2. Overlay kosong (selesai)
-3. Capture layer game  <- kamu di sini (uji kelayakan MediaProjection)
+3. Capture layer game (selesai: overlay terbukti ikut tertangkap MediaProjection)
+3b. Jalur display virtual  <- kamu di sini (tahap 4a, uji kelayakan)
 4. Renderer GLES + upscale/AA
 5. Penajaman, tone mapping, pseudo-HDR + mask HUD
 6. Resolusi render bawaan game + upscale overlay
@@ -35,3 +36,14 @@ Baris "Native:" harus menampilkan `renderer-stub 0.1 (stage1)`. Tekan
    frame capture. Hasilnya menentukan strategi anti-feedback untuk renderer tahap 4.
 4. "Tampilkan pill FPS" memunculkan pill mengambang (FPS dari capture + suhu baterai).
    Geser dengan jari; posisi tersimpan. FPS hanya terisi saat capture berjalan.
+
+## Cek tahap 4a (display virtual)
+Hasil tahap 3: overlay ikut tertangkap capture, jadi renderer tidak bisa
+memproses layar yang sama dengan tempat ia menggambar. Jalur baru: game
+dijalankan di display virtual milik app, hasilnya diolah lalu ditampilkan.
+1. Isi nama paket (bawaan `com.android.settings` untuk uji awal), pilih skala render.
+2. Tekan "viewer display virtual". Info di kiri atas menampilkan id display dan
+   hasil `am start` (ketuk info untuk menyembunyikan).
+3. Ketuk/geser di viewer: diteruskan ke display virtual lewat `input -d` (root).
+4. Ulangi dengan paket game. Kirim info di kiri atas kalau gagal.
+FPS bisa dilihat dengan menyalakan capture + pill sebelum membuka viewer.

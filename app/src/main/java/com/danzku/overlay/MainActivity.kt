@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -23,8 +24,12 @@ class MainActivity : Activity() {
     private lateinit var log: TextView
     private lateinit var tint: CheckBox
 
+    private lateinit var pkgInput: EditText
+
     private val ui = Handler(Looper.getMainLooper())
     private var testing = false
+    private val scales = floatArrayOf(1f, 0.75f, 0.5f)
+    private var scaleIdx = 0
 
     private val poll = object : Runnable {
         override fun run() {
@@ -43,7 +48,7 @@ class MainActivity : Activity() {
         }
 
         val heading = TextView(this).apply {
-            text = "DanzOverlay - tahap 3"
+            text = "DanzOverlay - tahap 4a"
             textSize = 20f
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -135,6 +140,30 @@ class MainActivity : Activity() {
             }
         }
 
+        pkgInput = EditText(this).apply {
+            setSingleLine()
+            hint = "nama paket app/game"
+            setText("com.android.settings")
+        }
+
+        val btnScale = Button(this).apply {
+            text = "Skala render VD: 100%"
+            setOnClickListener {
+                scaleIdx = (scaleIdx + 1) % scales.size
+                text = "Skala render VD: ${(scales[scaleIdx] * 100).toInt()}%"
+            }
+        }
+
+        val btnVdLand = Button(this).apply {
+            text = "Tahap 4a: viewer display virtual (landscape)"
+            setOnClickListener { openViewer(false) }
+        }
+
+        val btnVdPort = Button(this).apply {
+            text = "Tahap 4a: viewer display virtual (portrait)"
+            setOnClickListener { openViewer(true) }
+        }
+
         root.addView(heading)
         root.addView(nativeInfo)
         root.addView(status)
@@ -148,6 +177,10 @@ class MainActivity : Activity() {
         root.addView(btnTest)
         root.addView(btnPillOn)
         root.addView(btnPillOff)
+        root.addView(pkgInput)
+        root.addView(btnScale)
+        root.addView(btnVdLand)
+        root.addView(btnVdPort)
         root.addView(log)
         setContentView(ScrollView(this).apply { addView(root) })
     }
@@ -176,6 +209,20 @@ class MainActivity : Activity() {
         } else {
             log.text = "Izin capture ditolak."
         }
+    }
+
+    private fun openViewer(portrait: Boolean) {
+        val pkg = pkgInput.text.toString().trim()
+        if (!Regex("[A-Za-z0-9._]+").matches(pkg)) {
+            log.text = "Nama paket tidak valid (hanya huruf, angka, titik, garis bawah)."
+            return
+        }
+        startActivity(
+            Intent(this, VdActivity::class.java)
+                .putExtra(VdActivity.EXTRA_PKG, pkg)
+                .putExtra(VdActivity.EXTRA_SCALE, scales[scaleIdx])
+                .putExtra(VdActivity.EXTRA_PORTRAIT, portrait)
+        )
     }
 
     private fun startOverlay(tintOn: Boolean, mark: Boolean = false): Boolean {
