@@ -13,8 +13,8 @@ renderer native C++ (GLES 3.x), dibangun lewat GitHub Actions.
 ## Tahap
 0. Cek perangkat (selesai)
 1. Kerangka repo + GitHub Actions
-2. Overlay kosong  <- kamu di sini
-3. Capture layer game
+2. Overlay kosong (selesai)
+3. Capture layer game  <- kamu di sini (uji kelayakan MediaProjection)
 4. Renderer GLES + upscale/AA
 5. Penajaman, tone mapping, pseudo-HDR + mask HUD
 6. Resolusi render bawaan game + upscale overlay
@@ -25,3 +25,11 @@ renderer native C++ (GLES 3.x), dibangun lewat GitHub Actions.
 Unduh artifact `DanzOverlay-debug` dari tab Actions, instal APK, buka app.
 Baris "Native:" harus menampilkan `renderer-stub 0.1 (stage1)`. Tekan
 "Tes root", beri izin di KernelSU, dan hasilnya harus `uid=0`.
+
+## Cek tahap 3
+1. Tekan "Beri izin via root", lalu "Mulai capture" dan setujui dialog sistem.
+2. Status harus menampilkan resolusi layar, jumlah frame, dan rata-rata RGB.
+   FPS hanya akurat kalau isi layar bergerak (buka game, tarik bayangan
+   notifikasi untuk melihat fps).
+3. Tekan "Uji: overlay ikut tertangkap?". Hasilnya menentukan strategi
+   anti-feedback untuk renderer tahap 4.

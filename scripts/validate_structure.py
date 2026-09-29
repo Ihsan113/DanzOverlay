@@ -17,6 +17,8 @@ REQUIRED = [
     "app/src/main/java/com/danzku/overlay/NativeBridge.kt",
     "app/src/main/java/com/danzku/overlay/RootShell.kt",
     "app/src/main/java/com/danzku/overlay/OverlayService.kt",
+    "app/src/main/java/com/danzku/overlay/CaptureService.kt",
+    "app/src/main/java/com/danzku/overlay/CaptureStats.kt",
     ".github/workflows/build.yml",
 ]
 
@@ -39,6 +41,15 @@ if manifest.is_file():
         ET.parse(manifest)
     except ET.ParseError as e:
         errors.append(f"manifest tidak valid: {e}")
+
+# service wajib terdaftar di manifest (CaptureService harus bertipe mediaProjection)
+if manifest.is_file():
+    m = manifest.read_text()
+    for svc in (".OverlayService", ".CaptureService"):
+        if svc not in m:
+            errors.append(f"service {svc} belum terdaftar di manifest")
+    if "mediaProjection" not in m:
+        errors.append("CaptureService perlu android:foregroundServiceType=\"mediaProjection\"")
 
 # nama fungsi JNI harus cocok dengan package + kelas Kotlin
 cpp = ROOT / "app/src/main/cpp/renderer.cpp"
