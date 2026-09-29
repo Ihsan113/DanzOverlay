@@ -1,6 +1,7 @@
 package com.danzku.overlay
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
@@ -30,6 +31,8 @@ class MainActivity : Activity() {
     private var testing = false
     private val scales = floatArrayOf(1f, 0.75f, 0.5f)
     private var scaleIdx = 0
+    private val modeNames = arrayOf("Langsung (tanpa GL)", "GL polos", "GL + sharpen + upscale")
+    private var modeIdx = 2
 
     private val poll = object : Runnable {
         override fun run() {
@@ -48,7 +51,7 @@ class MainActivity : Activity() {
         }
 
         val heading = TextView(this).apply {
-            text = "DanzOverlay - tahap 4a"
+            text = "DanzOverlay - tahap 4b"
             textSize = 20f
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -154,13 +157,26 @@ class MainActivity : Activity() {
             }
         }
 
+        val btnPick = Button(this).apply {
+            text = "Pilih app / game..."
+            setOnClickListener { pickApp() }
+        }
+
+        val btnMode = Button(this).apply {
+            text = "Render: ${modeNames[modeIdx]}"
+            setOnClickListener {
+                modeIdx = (modeIdx + 1) % modeNames.size
+                text = "Render: ${modeNames[modeIdx]}"
+            }
+        }
+
         val btnVdLand = Button(this).apply {
-            text = "Tahap 4a: viewer display virtual (landscape)"
+            text = "Buka viewer display virtual (landscape)"
             setOnClickListener { openViewer(false) }
         }
 
         val btnVdPort = Button(this).apply {
-            text = "Tahap 4a: viewer display virtual (portrait)"
+            text = "Buka viewer display virtual (portrait)"
             setOnClickListener { openViewer(true) }
         }
 
@@ -178,6 +194,8 @@ class MainActivity : Activity() {
         root.addView(btnPillOn)
         root.addView(btnPillOff)
         root.addView(pkgInput)
+        root.addView(btnPick)
+        root.addView(btnMode)
         root.addView(btnScale)
         root.addView(btnVdLand)
         root.addView(btnVdPort)
@@ -222,7 +240,29 @@ class MainActivity : Activity() {
                 .putExtra(VdActivity.EXTRA_PKG, pkg)
                 .putExtra(VdActivity.EXTRA_SCALE, scales[scaleIdx])
                 .putExtra(VdActivity.EXTRA_PORTRAIT, portrait)
+                .putExtra(VdActivity.EXTRA_MODE, modeIdx)
         )
+    }
+
+    /** Daftar app yang punya ikon launcher, supaya nama paket tidak salah ketik. */
+    @Suppress("DEPRECATION")
+    private fun pickApp() {
+        val pm = packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, 0)
+            .map { it.loadLabel(pm).toString() to it.activityInfo.packageName }
+            .distinctBy { it.second }
+            .sortedBy { it.first.lowercase() }
+        if (apps.isEmpty()) {
+            log.text = "Daftar app kosong."
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Pilih app")
+            .setItems(apps.map { "${it.first}\n${it.second}" }.toTypedArray()) { _, i ->
+                pkgInput.setText(apps[i].second)
+            }
+            .show()
     }
 
     private fun startOverlay(tintOn: Boolean, mark: Boolean = false): Boolean {
@@ -294,6 +334,10 @@ class MainActivity : Activity() {
         sb.append("Izin overlay: ").append(if (canDraw) "AKTIF" else "belum")
         sb.append("\nOverlay: ").append(if (OverlayService.running) "BERJALAN" else "mati")
         sb.append("\nPill FPS: ").append(if (PillService.running) "TAMPIL" else "mati")
+        if (RenderStats.running) {
+            sb.append("\nRender VD: game ").append("%.1f".format(RenderStats.fps))
+                .append(" fps, layar ").append("%.1f".format(RenderStats.outFps)).append(" fps")
+        }
         if (CaptureStats.running) {
             val ago = SystemClock.elapsedRealtime() - CaptureStats.lastFrameAt
             sb.append("\nCapture: BERJALAN ")

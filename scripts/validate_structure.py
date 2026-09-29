@@ -20,6 +20,9 @@ REQUIRED = [
     "app/src/main/java/com/danzku/overlay/CaptureService.kt",
     "app/src/main/java/com/danzku/overlay/PillService.kt",
     "app/src/main/java/com/danzku/overlay/VdActivity.kt",
+    "app/src/main/java/com/danzku/overlay/VdRenderer.kt",
+    "app/src/main/java/com/danzku/overlay/InputBridge.kt",
+    "app/src/main/java/com/danzku/overlay/InputHelper.kt",
     "app/src/main/java/com/danzku/overlay/CaptureStats.kt",
     ".github/workflows/build.yml",
 ]

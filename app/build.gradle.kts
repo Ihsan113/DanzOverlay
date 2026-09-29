@@ -12,8 +12,8 @@ android {
         applicationId = "com.danzku.overlay"
         minSdk = 29
         targetSdk = 33
-        versionCode = 5
-        versionName = "0.4.0-stage4a"
+        versionCode = 6
+        versionName = "0.5.0-stage4b"
 
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {

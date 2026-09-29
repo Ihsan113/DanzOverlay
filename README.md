@@ -15,8 +15,8 @@ renderer native C++ (GLES 3.x), dibangun lewat GitHub Actions.
 1. Kerangka repo + GitHub Actions
 2. Overlay kosong (selesai)
 3. Capture layer game (selesai: overlay terbukti ikut tertangkap MediaProjection)
-3b. Jalur display virtual  <- kamu di sini (tahap 4a, uji kelayakan)
-4. Renderer GLES + upscale/AA
+3b. Jalur display virtual (4a: VD + viewer, selesai; VD id terbentuk di Android 13)
+4. Renderer GLES + upscale/AA  <- kamu di sini (4b: GL + sharpen + upscale, helper input root)
 5. Penajaman, tone mapping, pseudo-HDR + mask HUD
 6. Resolusi render bawaan game + upscale overlay
 7. Pass neural (Anime4K-style)
@@ -47,3 +47,12 @@ dijalankan di display virtual milik app, hasilnya diolah lalu ditampilkan.
 3. Ketuk/geser di viewer: diteruskan ke display virtual lewat `input -d` (root).
 4. Ulangi dengan paket game. Kirim info di kiri atas kalau gagal.
 FPS bisa dilihat dengan menyalakan capture + pill sebelum membuka viewer.
+
+## Cek tahap 4b (renderer + input root)
+1. "Pilih app / game..." mengisi nama paket dari daftar app terpasang (juga menampilkan paket yang salah ketik).
+   App di Dual Apps/Second Space dicari otomatis di semua user.
+2. "Render": Langsung (tanpa GL) / GL polos / GL + sharpen + upscale (CAS + Catmull-Rom).
+3. Buka viewer. Info kiri atas: FPS game (frame yang dihasilkan game), FPS layar, dan mode sentuhan.
+   "helper root" = multi-touch penuh; "input tap/swipe" = cadangan kalau helper gagal.
+4. Pill FPS sekarang membaca FPS game dari renderer, tidak perlu capture.
+5. Coba skala 75% atau 50%: game dirender lebih kecil, lalu di-upscale ke layar.

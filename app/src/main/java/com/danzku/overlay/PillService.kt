@@ -126,12 +126,15 @@ class PillService : Service() {
     }
 
     private fun update() {
-        val fpsText = if (CaptureStats.running) {
-            val f = CaptureStats.fps
+        val fpsText = when {
+            // FPS game dari renderer display virtual (akurat, tanpa capture)
+            RenderStats.running -> Math.round(RenderStats.fps).toString() + " FPS"
             // di bawah 2 dianggap 0: pill sendiri ikut menggambar ulang saat teks berubah
-            (if (f < 2f) 0 else Math.round(f)).toString() + " FPS"
-        } else {
-            "FPS --"
+            CaptureStats.running -> {
+                val f = CaptureStats.fps
+                (if (f < 2f) 0 else Math.round(f)).toString() + " FPS"
+            }
+            else -> "FPS --"
         }
         val temp = batteryTemp()
         val text = if (temp != null) "$fpsText · " + "%.1f".format(temp) + "°C" else fpsText
